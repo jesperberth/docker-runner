@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  runner:
+    build: .
+    restart: always
+    environment:
+      - GITHUB_URL=https://github.com/YOUR_ORG_OR_USER/YOUR_REPO
+      - GITHUB_TOKEN=YOUR_REGISTRATION_TOKEN_OR_PAT
+      - RUNNER_NAME_PREFIX=vm1-runner
+    volumes:
+      # Mount the host Docker socket to enable Docker-in-Docker functionality in workflows
+      - /var/run/docker.sock:/var/run/docker.sock
