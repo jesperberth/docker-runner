@@ -5,6 +5,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Install dependencies including Docker CLI
 RUN apt-get update && apt-get install -y \
     curl \
+    tree \
     jq \
     awscli \
     build-essential \
