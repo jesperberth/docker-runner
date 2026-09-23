@@ -138,18 +138,34 @@ remove_existing_runner_config_if_any
 # Generate dynamic runner name using hostname
 RUNNER_NAME="${RUNNER_NAME_PREFIX:-ubuntu-runner}-$(hostname)"
 
+RUNNER_EPHEMERAL="${RUNNER_EPHEMERAL:-true}"
+CONFIG_ARGS=(
+    --url "${GITHUB_URL}"
+    --token "${RUNNER_REG_TOKEN}"
+    --name "${RUNNER_NAME}"
+    --work "_work"
+    --unattended
+    --replace
+)
+
+if [[ "${RUNNER_EPHEMERAL}" == "true" ]]; then
+    CONFIG_ARGS+=(--ephemeral)
+fi
+
 # Register runner with GitHub using a registration token or PAT
-./config.sh --url "${GITHUB_URL}" \
-            --token "${RUNNER_REG_TOKEN}" \
-            --name "${RUNNER_NAME}" \
-            --work "_work" \
-            --unattended \
-            --replace \
-            --ephemeral
+./config.sh "${CONFIG_ARGS[@]}"
 
 # Cleanup on shutdown
 cleanup() {
     echo "Removing runner..."
+
+    # Ephemeral runners remove themselves after one job, which also deletes local
+    # config files. In that case, skip explicit remove to avoid noisy warnings.
+    if [[ ! -f .runner ]]; then
+        echo "Local runner config already removed; skipping server removal step."
+        return 0
+    fi
+
     local remove_token="${GITHUB_TOKEN}"
     if [[ -n "${PAT_VALUE}" ]]; then
         remove_token="$(request_runner_token "${PAT_VALUE}" "remove-token")"

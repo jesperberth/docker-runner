@@ -16,6 +16,11 @@ Offline runner cleanup:
 - Disable with `AUTO_REMOVE_OFFLINE_RUNNERS=false`.
 - Keep `RUNNER_NAME_PREFIX` unique per VM (for example `vm1-runner`, `vm2-runner`) so cleanup only touches that VM's stale runners.
 
+Runner lifetime:
+
+- `RUNNER_EPHEMERAL=true` (default): runner accepts one job and exits by design.
+- `RUNNER_EPHEMERAL=false`: runner stays online and can process multiple jobs.
+
 If you see `404 Not Found` during registration, it is usually one of these:
 
 - `GITHUB_URL` points to the wrong scope (repo vs org).
