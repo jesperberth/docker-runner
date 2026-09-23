@@ -6,6 +6,8 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
     curl \
     tree \
+    unzip \
+    zip \
     jq \
     awscli \
     build-essential \
