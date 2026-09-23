@@ -53,6 +53,27 @@ request_runner_token() {
         "https://api.github.com/${scope_path}/actions/runners/${action}" | jq -r '.token'
 }
 
+cleanup_local_runner_files() {
+    rm -f .runner .credentials .credentials_rsaparams || true
+}
+
+remove_existing_runner_config_if_any() {
+    if [[ -f .runner ]]; then
+        echo "Existing runner config detected. Removing local runner state before re-registering..."
+
+        local remove_token="${GITHUB_TOKEN}"
+        if [[ -n "${PAT_VALUE}" ]]; then
+            remove_token="$(request_runner_token "${PAT_VALUE}" "remove-token")"
+        fi
+
+        if [[ -n "${remove_token}" && "${remove_token}" != "null" ]]; then
+            ./config.sh remove --token "${remove_token}" --unattended || true
+        fi
+
+        cleanup_local_runner_files
+    fi
+}
+
 PAT_VALUE="${GITHUB_PAT:-}"
 if [[ -z "${PAT_VALUE}" ]] && looks_like_pat "${GITHUB_TOKEN}"; then
     PAT_VALUE="${GITHUB_TOKEN}"
@@ -66,6 +87,8 @@ if [[ -n "${PAT_VALUE}" ]]; then
         exit 1
     fi
 fi
+
+remove_existing_runner_config_if_any
 
 # Generate dynamic runner name using hostname
 RUNNER_NAME="${RUNNER_NAME_PREFIX:-ubuntu-runner}-$(hostname)"
@@ -90,6 +113,8 @@ cleanup() {
     if [[ -n "${remove_token}" && "${remove_token}" != "null" ]]; then
         ./config.sh remove --token "${remove_token}" || true
     fi
+
+    cleanup_local_runner_files
 }
 trap cleanup EXIT SIGINT SIGTERM
 
