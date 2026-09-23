@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y \
     curl \
     jq \
     build-essential \
+    libicu-dev \
     libssl-dev \
     libffi-dev \
     python3 \
