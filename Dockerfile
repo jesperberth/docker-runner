@@ -6,6 +6,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
     curl \
     jq \
+    awscli \
     build-essential \
     libicu-dev \
     libssl-dev \
