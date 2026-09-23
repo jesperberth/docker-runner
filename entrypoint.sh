@@ -53,6 +53,50 @@ request_runner_token() {
         "https://api.github.com/${scope_path}/actions/runners/${action}" | jq -r '.token'
 }
 
+github_api() {
+    local method="$1"
+    local endpoint="$2"
+    curl -fsSL -X "${method}" \
+        -H "Accept: application/vnd.github+json" \
+        -H "Authorization: Bearer ${PAT_VALUE}" \
+        -H "X-GitHub-Api-Version: 2022-11-28" \
+        "https://api.github.com/${endpoint}"
+}
+
+prune_offline_runners_with_prefix() {
+    local enabled="${AUTO_REMOVE_OFFLINE_RUNNERS:-true}"
+    if [[ "${enabled}" != "true" ]]; then
+        return 0
+    fi
+
+    if [[ -z "${PAT_VALUE}" ]]; then
+        echo "Skipping offline runner cleanup: set GITHUB_PAT (or PAT in GITHUB_TOKEN) to enable API cleanup."
+        return 0
+    fi
+
+    local prefix="${RUNNER_NAME_PREFIX:-ubuntu-runner}-"
+    local scope_path
+    scope_path="$(resolve_runner_scope)"
+
+    echo "Pruning offline runners with prefix '${prefix}'..."
+    local response
+    response="$(github_api GET "${scope_path}/actions/runners?per_page=100")"
+
+    local ids
+    ids="$(echo "${response}" | jq -r --arg prefix "${prefix}" '.runners[] | select((.status == "offline") and (.name | startswith($prefix))) | .id')"
+
+    if [[ -z "${ids}" ]]; then
+        echo "No matching offline runners found."
+        return 0
+    fi
+
+    while IFS= read -r id; do
+        [[ -z "${id}" ]] && continue
+        github_api DELETE "${scope_path}/actions/runners/${id}" >/dev/null || true
+        echo "Removed offline runner id=${id}"
+    done <<< "${ids}"
+}
+
 cleanup_local_runner_files() {
     rm -f .runner .credentials .credentials_rsaparams || true
 }
@@ -88,6 +132,7 @@ if [[ -n "${PAT_VALUE}" ]]; then
     fi
 fi
 
+prune_offline_runners_with_prefix
 remove_existing_runner_config_if_any
 
 # Generate dynamic runner name using hostname

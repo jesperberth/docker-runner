@@ -9,6 +9,13 @@ Credentials:
 	- Repo runner URL (`https://github.com/<owner>/<repo>`): PAT must have repo admin access.
 	- Org runner URL (`https://github.com/<org>`): PAT must include `admin:org`.
 
+Offline runner cleanup:
+
+- By default, the container removes offline runners whose name starts with `${RUNNER_NAME_PREFIX}-` before registering.
+- This cleanup requires PAT mode (`GITHUB_PAT` or a PAT in `GITHUB_TOKEN`).
+- Disable with `AUTO_REMOVE_OFFLINE_RUNNERS=false`.
+- Keep `RUNNER_NAME_PREFIX` unique per VM (for example `vm1-runner`, `vm2-runner`) so cleanup only touches that VM's stale runners.
+
 If you see `404 Not Found` during registration, it is usually one of these:
 
 - `GITHUB_URL` points to the wrong scope (repo vs org).
